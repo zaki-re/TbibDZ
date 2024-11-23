@@ -31,15 +31,34 @@ export default function DoctorSchedule() {
   const [schedule, setSchedule] = useState<DaySchedule[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
+  const [doctorId, setDoctorId] = useState<number | null>(null);
 
   useEffect(() => {
     if (userId) {
+      getDoctorId();
+    }
+  }, [userId]);
+
+  useEffect(() => {
+    if (doctorId) {
       const today = new Date();
       setCurrentMonth(today);
       generateWeekDays(today);
       loadSchedule();
     }
-  }, [userId]);
+  }, [doctorId]);
+
+  const getDoctorId = async () => {
+    try {
+      const response = await api.get('/doctors/profile');
+      if (response.data.profile) {
+        setDoctorId(response.data.profile.id);
+      }
+    } catch (err) {
+      setError('Erreur lors du chargement du profil');
+      console.error('Error getting doctor profile:', err);
+    }
+  };
 
   const generateWeekDays = (date: Date) => {
     const week = [];
@@ -53,12 +72,14 @@ export default function DoctorSchedule() {
   };
 
   const loadSchedule = async () => {
+    if (!doctorId) return;
+
     try {
       setIsLoading(true);
       setError('');
 
       // Get doctor's availability and booked appointments
-      const response = await api.get('/doctors/availability');
+      const response = await api.get(`/doctors/availability/${doctorId}`);
       const { availability, bookedSlots } = response.data;
 
       // Create schedule for selected week
@@ -87,6 +108,7 @@ export default function DoctorSchedule() {
       setSchedule(newSchedule);
     } catch (err: any) {
       setError(err.response?.data?.message || 'Erreur lors du chargement du planning');
+      console.error('Error loading schedule:', err);
     } finally {
       setIsLoading(false);
     }
@@ -96,15 +118,19 @@ export default function DoctorSchedule() {
     const newDate = new Date(selectedWeek[0]);
     newDate.setDate(newDate.getDate() - 7);
     generateWeekDays(newDate);
-    loadSchedule();
   };
 
   const handleNextWeek = () => {
     const newDate = new Date(selectedWeek[0]);
     newDate.setDate(newDate.getDate() + 7);
     generateWeekDays(newDate);
-    loadSchedule();
   };
+
+  useEffect(() => {
+    if (doctorId) {
+      loadSchedule();
+    }
+  }, [selectedWeek, doctorId]);
 
   const handlePreviousMonth = () => {
     const newDate = new Date(currentMonth);

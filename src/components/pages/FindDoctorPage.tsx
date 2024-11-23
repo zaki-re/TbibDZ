@@ -48,7 +48,6 @@ export default function FindDoctorPage() {
 
   const handleBooking = (doctor: Doctor) => {
     if (!isAuthenticated) {
-      // Navigate to login page
       window.dispatchEvent(new CustomEvent('navigate', { detail: 'login' }));
       return;
     }
@@ -207,7 +206,7 @@ export default function FindDoctorPage() {
         <BookingModal
           isOpen={showBookingModal}
           onClose={() => setShowBookingModal(false)}
-          doctorId={selectedDoctor.id.toString()}
+          doctorId={selectedDoctor.id}
           doctorName={`Dr. ${selectedDoctor.firstName} ${selectedDoctor.lastName}`}
           location={selectedDoctor.city}
         />

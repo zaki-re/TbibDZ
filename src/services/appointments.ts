@@ -32,3 +32,8 @@ export const updateAppointmentStatus = async (id: number, status: Appointment['s
   const response = await api.put(`/appointments/${id}`, { status });
   return response.data;
 };
+
+export const deleteAppointment = async (id: number) => {
+  const response = await api.delete(`/appointments/${id}`);
+  return response.data;
+};

@@ -12,7 +12,12 @@ router.get('/', async (req, res) => {
 
     let query = `
       SELECT 
-        d.*,
+        d.id,
+        d.specialty,
+        d.address,
+        d.city,
+        d.bio,
+        d.consultationFee,
         u.firstName,
         u.lastName,
         u.email,
@@ -54,8 +59,8 @@ router.get('/', async (req, res) => {
   }
 });
 
-// Get doctor availability (moved before the /profile route)
-router.get('/:id/availability', async (req, res) => {
+// Get doctor availability
+router.get('/availability/:id', async (req, res) => {
   try {
     const db = await getDb();
     const doctorId = req.params.id;
@@ -98,43 +103,76 @@ router.get('/:id/availability', async (req, res) => {
   }
 });
 
-// Update doctor availability
-router.put('/availability', auth, async (req, res) => {
+// Get consultation requests
+router.get('/consultation-requests', auth, async (req, res) => {
   try {
     const db = await getDb();
-    const { availability } = req.body;
-
-    // Get doctor ID
+    
+    // Get doctor ID first
     const doctor = await db.get(`
-      SELECT d.id 
-      FROM doctors d
-      JOIN users u ON d.userId = u.id
-      WHERE u.id = ? AND u.userType = 'doctor'
+      SELECT id FROM doctors WHERE userId = ?
     `, [req.user.id]);
 
     if (!doctor) {
       return res.status(404).json({ message: 'Doctor profile not found' });
     }
 
-    // First delete existing availability
-    await db.run('DELETE FROM availability WHERE doctorId = ?', [doctor.id]);
+    // Get pending consultation requests
+    const requests = await db.all(`
+      SELECT a.*, 
+             u.firstName as patientFirstName, 
+             u.lastName as patientLastName,
+             u.phone as patientPhone
+      FROM appointments a
+      JOIN users u ON a.patientId = u.id
+      WHERE a.doctorId = ? AND a.status = 'pending'
+      ORDER BY a.date ASC, a.time ASC
+    `, [doctor.id]);
 
-    // Then insert new availability
-    for (const slot of availability) {
-      await db.run(
-        'INSERT INTO availability (doctorId, dayOfWeek, startTime, endTime) VALUES (?, ?, ?, ?)',
-        [doctor.id, slot.dayOfWeek, slot.startTime, slot.endTime]
-      );
-    }
-
-    res.json({ message: 'Availability updated successfully' });
+    res.json(requests);
   } catch (error) {
-    console.error('Update availability error:', error);
+    console.error('Error fetching consultation requests:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });
-// Update doctor availability
 
+// Update consultation request status
+router.put('/consultation-requests/:id', auth, async (req, res) => {
+  try {
+    const db = await getDb();
+    const { status } = req.body;
+    const requestId = req.params.id;
+
+    // Validate status
+    if (!['accept', 'reject'].includes(status)) {
+      return res.status(400).json({ message: 'Invalid status' });
+    }
+
+    // Get the appointment and verify doctor's permission
+    const appointment = await db.get(`
+      SELECT a.* 
+      FROM appointments a
+      JOIN doctors d ON a.doctorId = d.id
+      WHERE a.id = ? AND d.userId = ?
+    `, [requestId, req.user.id]);
+
+    if (!appointment) {
+      return res.status(404).json({ message: 'Consultation request not found' });
+    }
+
+    // Update appointment status
+    const newStatus = status === 'accept' ? 'confirmed' : 'cancelled';
+    await db.run(
+      'UPDATE appointments SET status = ? WHERE id = ?',
+      [newStatus, requestId]
+    );
+
+    res.json({ message: 'Consultation request updated successfully' });
+  } catch (error) {
+    console.error('Error updating consultation request:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
 
 // Get doctor profile
 router.get('/profile', auth, async (req, res) => {
@@ -204,43 +242,4 @@ router.get('/profile', auth, async (req, res) => {
   }
 });
 
-// Update doctor profile
-router.put('/profile', auth, async (req, res) => {
-  try {
-    const db = await getDb();
-    const { specialty, address, city, phone, consultationFee, bio } = req.body;
-
-    // Get doctor ID
-    const doctor = await db.get(`
-      SELECT d.id 
-      FROM doctors d
-      JOIN users u ON d.userId = u.id
-      WHERE u.id = ? AND u.userType = 'doctor'
-    `, [req.user.id]);
-
-    if (!doctor) {
-      return res.status(404).json({ message: 'Doctor profile not found' });
-    }
-
-    // Update doctor profile
-    await db.run(`
-      UPDATE doctors
-      SET specialty = ?, address = ?, city = ?, bio = ?, consultationFee = ?
-      WHERE id = ?
-    `, [specialty, address, city, bio, consultationFee, doctor.id]);
-
-    // Update user phone
-    await db.run(`
-      UPDATE users
-      SET phone = ?
-      WHERE id = ?
-    `, [phone, req.user.id]);
-
-    res.json({ message: 'Profile updated successfully' });
-  } catch (error) {
-    console.error('Error updating doctor profile:', error);
-    res.status(500).json({ message: 'Server error' });
-  }
-});
-
-export { router as default };
+export { router };

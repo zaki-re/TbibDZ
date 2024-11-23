@@ -1,6 +1,7 @@
 import { Menu, X, User, Globe, LogOut, Bell } from 'lucide-react';
 import { useState } from 'react';
 import { PageType } from '../App';
+import { useLanguage } from '../hooks/useLanguage';
 
 interface NavbarProps {
   onNavigate: (page: PageType) => void;
@@ -19,22 +20,21 @@ export default function Navbar({
 }: NavbarProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
+  const { t } = useLanguage();
 
   const handleLanguageChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     onLanguageChange(e.target.value as 'fr' | 'ar' | 'en');
   };
 
   const handleLogout = () => {
-    // Clear any stored credentials/tokens
     window.location.hash = '';
-    const navEvent = new CustomEvent('navigate', { detail: 'home' });
-    window.dispatchEvent(navEvent);
+    window.dispatchEvent(new CustomEvent('navigate', { detail: 'home' }));
     window.dispatchEvent(new CustomEvent('logout'));
   };
 
   const notifications = [
-    { id: 1, message: "Nouveau rendez-vous confirmé", time: "Il y a 5 minutes" },
-    { id: 2, message: "Rappel: Rendez-vous demain", time: "Il y a 1 heure" }
+    { id: 1, message: t('notifications.newAppointment'), time: t('notifications.fiveMinutesAgo') },
+    { id: 2, message: t('notifications.appointmentReminder'), time: t('notifications.oneHourAgo') }
   ];
 
   const renderAuthenticatedNav = () => (
@@ -45,13 +45,13 @@ export default function Navbar({
             onClick={() => onNavigate('find-doctor')}
             className="text-gray-700 hover:text-blue-600"
           >
-            Trouver un Médecin
+            {t('nav.findDoctor')}
           </button>
           <button 
             onClick={() => onNavigate('patient-dashboard')}
             className="text-gray-700 hover:text-blue-600"
           >
-            Mes Rendez-vous
+            {t('nav.appointments')}
           </button>
         </>
       ) : (
@@ -60,13 +60,13 @@ export default function Navbar({
             onClick={() => onNavigate('doctor-dashboard')}
             className="text-gray-700 hover:text-blue-600"
           >
-            Tableau de bord
+            {t('nav.dashboard')}
           </button>
           <button 
             onClick={() => onNavigate('doctor-schedule')}
             className="text-gray-700 hover:text-blue-600"
           >
-            Planning
+            {t('nav.schedule')}
           </button>
         </>
       )}
@@ -85,7 +85,7 @@ export default function Navbar({
         {showNotifications && (
           <div className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-lg py-2 z-50">
             <div className="px-4 py-2 border-b border-gray-100">
-              <h3 className="font-semibold">Notifications</h3>
+              <h3 className="font-semibold">{t('notifications.title')}</h3>
             </div>
             {notifications.map(notification => (
               <div key={notification.id} className="px-4 py-3 hover:bg-gray-50">
@@ -102,7 +102,7 @@ export default function Navbar({
         className="text-gray-700 hover:text-blue-600 flex items-center"
       >
         <LogOut className="w-5 h-5 mr-1" />
-        Déconnexion
+        {t('nav.logout')}
       </button>
     </>
   );
@@ -113,25 +113,19 @@ export default function Navbar({
         onClick={() => onNavigate('home')}
         className="text-gray-700 hover:text-blue-600"
       >
-        Accueil
+        {t('nav.home')}
       </button>
       <button 
         onClick={() => onNavigate('find-doctor')}
         className="text-gray-700 hover:text-blue-600"
       >
-        Trouver un Médecin
-      </button>
-      <button 
-        onClick={() => onNavigate('about')}
-        className="text-gray-700 hover:text-blue-600"
-      >
-        À Propos
+        {t('nav.findDoctor')}
       </button>
       <button 
         onClick={() => onNavigate('contact')}
         className="text-gray-700 hover:text-blue-600"
       >
-        Contact
+        {t('nav.contact')}
       </button>
     </>
   );
@@ -172,7 +166,7 @@ export default function Navbar({
                 className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center"
               >
                 <User className="w-4 h-4 mr-2" />
-                Connexion
+                {t('nav.login')}
               </button>
             )}
           </div>
@@ -204,7 +198,7 @@ export default function Navbar({
                       }}
                       className="block px-3 py-2 text-gray-700 hover:text-blue-600 w-full text-left"
                     >
-                      Trouver un Médecin
+                      {t('nav.findDoctor')}
                     </button>
                     <button 
                       onClick={() => {
@@ -213,7 +207,7 @@ export default function Navbar({
                       }}
                       className="block px-3 py-2 text-gray-700 hover:text-blue-600 w-full text-left"
                     >
-                      Mes Rendez-vous
+                      {t('nav.appointments')}
                     </button>
                   </>
                 ) : (
@@ -225,7 +219,7 @@ export default function Navbar({
                       }}
                       className="block px-3 py-2 text-gray-700 hover:text-blue-600 w-full text-left"
                     >
-                      Tableau de bord
+                      {t('nav.dashboard')}
                     </button>
                     <button 
                       onClick={() => {
@@ -234,7 +228,7 @@ export default function Navbar({
                       }}
                       className="block px-3 py-2 text-gray-700 hover:text-blue-600 w-full text-left"
                     >
-                      Planning
+                      {t('nav.schedule')}
                     </button>
                   </>
                 )}
@@ -242,7 +236,7 @@ export default function Navbar({
                   onClick={handleLogout}
                   className="block px-3 py-2 text-gray-700 hover:text-blue-600 w-full text-left"
                 >
-                  Déconnexion
+                  {t('nav.logout')}
                 </button>
               </>
             ) : (
@@ -254,7 +248,7 @@ export default function Navbar({
                   }}
                   className="block px-3 py-2 text-gray-700 hover:text-blue-600 w-full text-left"
                 >
-                  Accueil
+                  {t('nav.home')}
                 </button>
                 <button 
                   onClick={() => {
@@ -263,16 +257,7 @@ export default function Navbar({
                   }}
                   className="block px-3 py-2 text-gray-700 hover:text-blue-600 w-full text-left"
                 >
-                  Trouver un Médecin
-                </button>
-                <button 
-                  onClick={() => {
-                    onNavigate('about');
-                    setIsOpen(false);
-                  }}
-                  className="block px-3 py-2 text-gray-700 hover:text-blue-600 w-full text-left"
-                >
-                  À Propos
+                  {t('nav.findDoctor')}
                 </button>
                 <button 
                   onClick={() => {
@@ -281,7 +266,7 @@ export default function Navbar({
                   }}
                   className="block px-3 py-2 text-gray-700 hover:text-blue-600 w-full text-left"
                 >
-                  Contact
+                  {t('nav.contact')}
                 </button>
                 <button 
                   onClick={() => {
@@ -290,7 +275,7 @@ export default function Navbar({
                   }}
                   className="w-full bg-blue-600 text-white px-3 py-2 rounded-lg hover:bg-blue-700"
                 >
-                  Connexion
+                  {t('nav.login')}
                 </button>
               </>
             )}

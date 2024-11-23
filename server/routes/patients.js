@@ -60,4 +60,4 @@ router.get('/profile', auth, async (req, res) => {
   }
 });
 
-export { router as default };
+export { router };

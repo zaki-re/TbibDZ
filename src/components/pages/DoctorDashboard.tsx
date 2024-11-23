@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
-import { Calendar, Clock, User, Settings, Star, Video, FileText, ChevronRight, MapPin } from 'lucide-react';
+import { Calendar, Clock, User, Settings, Star, Video, FileText, ChevronRight, MapPin, Check, X, Search } from 'lucide-react';
 import api from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
+import ProfilePhotoUpload from '../ProfilePhotoUpload';
 
-type TabType = 'appointments' | 'patients' | 'reviews' | 'settings';
+type TabType = 'appointments' | 'requests' | 'patients' | 'reviews' | 'settings';
 
 interface Profile {
   id: number;
@@ -18,6 +19,7 @@ interface Profile {
   consultationFee: number;
   totalReviews: number;
   averageRating: number;
+  photoUrl?: string;
 }
 
 interface Appointment {
@@ -32,12 +34,15 @@ interface Appointment {
   notes?: string;
 }
 
-interface Review {
+interface ConsultationRequest {
   id: number;
   patientFirstName: string;
   patientLastName: string;
-  rating: number;
-  comment: string;
+  patientPhone: string;
+  date: string;
+  time: string;
+  type: 'in-person' | 'video';
+  notes?: string;
   createdAt: string;
 }
 
@@ -45,15 +50,16 @@ export default function DoctorDashboard() {
   const { userId } = useAuth();
   const [activeTab, setActiveTab] = useState<TabType>('appointments');
   const [profile, setProfile] = useState<Profile | null>(null);
-  const [todayAppointments, setTodayAppointments] = useState<Appointment[]>([]);
-  const [upcomingAppointments, setUpcomingAppointments] = useState<Appointment[]>([]);
-  const [reviews, setReviews] = useState<Review[]>([]);
+  const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [consultationRequests, setConsultationRequests] = useState<ConsultationRequest[]>([]);
+  const [searchTerm, setSearchTerm] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
 
   useEffect(() => {
     if (userId) {
       loadDoctorData();
+      loadConsultationRequests();
     }
   }, [userId]);
 
@@ -67,9 +73,7 @@ export default function DoctorDashboard() {
 
       if (data) {
         setProfile(data.profile || null);
-        setTodayAppointments(data.todayAppointments || []);
-        setUpcomingAppointments(data.upcomingAppointments || []);
-        setReviews(data.reviews || []);
+        setAppointments(data.appointments || []);
       }
     } catch (err: any) {
       const errorMessage = err.response?.data?.message || 'Erreur lors du chargement des données';
@@ -79,31 +83,166 @@ export default function DoctorDashboard() {
     }
   };
 
-  const handleProfileUpdate = async (updatedProfile: Partial<Profile>) => {
+  const loadConsultationRequests = async () => {
     try {
-      setError('');
-      await api.put('/doctors/profile', updatedProfile);
-      await loadDoctorData();
-    } catch (err: any) {
-      const errorMessage = err.response?.data?.message || 'Erreur lors de la mise à jour du profil';
-      setError(errorMessage);
+      const response = await api.get('/doctors/consultation-requests');
+      setConsultationRequests(response.data);
+    } catch (err) {
+      console.error('Error loading consultation requests:', err);
     }
   };
 
-  const handleAppointmentStatusUpdate = async (appointmentId: number, status: 'confirmed' | 'cancelled' | 'completed') => {
+  const handlePhotoUpdate = (photoUrl: string) => {
+    setProfile(prev => prev ? { ...prev, photoUrl } : null);
+  };
+
+  const handleRequestAction = async (requestId: number, action: 'accept' | 'reject') => {
     try {
-      setError('');
-      await api.put(`/appointments/${appointmentId}`, { status });
-      await loadDoctorData();
-    } catch (err: any) {
-      const errorMessage = err.response?.data?.message || 'Erreur lors de la mise à jour du rendez-vous';
-      setError(errorMessage);
+      await api.put(`/doctors/consultation-requests/${requestId}`, { status: action });
+      loadConsultationRequests();
+      loadDoctorData();
+    } catch (err) {
+      console.error('Error updating consultation request:', err);
     }
   };
 
   const handleSchedule = () => {
     window.dispatchEvent(new CustomEvent('navigate', { detail: 'doctor-schedule' }));
   };
+
+  const filteredAppointments = appointments.filter(appointment => {
+    const fullName = `${appointment.patientFirstName} ${appointment.patientLastName}`.toLowerCase();
+    return fullName.includes(searchTerm.toLowerCase());
+  });
+
+  const todayAppointments = filteredAppointments.filter(appointment => {
+    const today = new Date().toISOString().split('T')[0];
+    return appointment.date === today;
+  });
+
+  const futureAppointments = filteredAppointments.filter(appointment => {
+    const today = new Date().toISOString().split('T')[0];
+    return appointment.date > today;
+  });
+
+  const pastAppointments = filteredAppointments.filter(appointment => {
+    const today = new Date().toISOString().split('T')[0];
+    return appointment.date < today;
+  });
+
+  const renderAppointments = () => (
+    <div className="space-y-6">
+      <div className="flex justify-between items-center mb-6">
+        <h3 className="text-xl font-semibold">Rendez-vous</h3>
+        <button 
+          onClick={handleSchedule}
+          className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+        >
+          Gérer les disponibilités
+        </button>
+      </div>
+
+      <div className="mb-6">
+        <div className="relative">
+          <Search className="absolute left-3 top-3 text-gray-400 w-5 h-5" />
+          <input
+            type="text"
+            placeholder="Rechercher un patient..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+          />
+        </div>
+      </div>
+
+      {/* Today's Appointments */}
+      <div className="mb-8">
+        <h4 className="text-lg font-medium mb-4">Aujourd'hui</h4>
+        {todayAppointments.length === 0 ? (
+          <p className="text-gray-500 text-center py-4">Aucun rendez-vous aujourd'hui</p>
+        ) : (
+          <div className="space-y-4">
+            {todayAppointments.map((appointment) => (
+              <AppointmentCard key={appointment.id} appointment={appointment} />
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Future Appointments */}
+      <div className="mb-8">
+        <h4 className="text-lg font-medium mb-4">Rendez-vous à venir</h4>
+        {futureAppointments.length === 0 ? (
+          <p className="text-gray-500 text-center py-4">Aucun rendez-vous à venir</p>
+        ) : (
+          <div className="space-y-4">
+            {futureAppointments.map((appointment) => (
+              <AppointmentCard key={appointment.id} appointment={appointment} />
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Past Appointments */}
+      <div>
+        <h4 className="text-lg font-medium mb-4">Historique des rendez-vous</h4>
+        {pastAppointments.length === 0 ? (
+          <p className="text-gray-500 text-center py-4">Aucun rendez-vous passé</p>
+        ) : (
+          <div className="space-y-4">
+            {pastAppointments.map((appointment) => (
+              <AppointmentCard key={appointment.id} appointment={appointment} />
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+
+  const AppointmentCard = ({ appointment }: { appointment: Appointment }) => (
+    <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-100">
+      <div className="flex justify-between items-start">
+        <div className="flex items-start space-x-4">
+          <div className="bg-blue-100 p-3 rounded-full">
+            {appointment.type === 'video' ? (
+              <Video className="w-6 h-6 text-blue-600" />
+            ) : (
+              <User className="w-6 h-6 text-blue-600" />
+            )}
+          </div>
+          <div>
+            <h4 className="font-semibold">
+              {appointment.patientFirstName} {appointment.patientLastName}
+            </h4>
+            <div className="flex items-center text-sm text-gray-500 mt-1">
+              <Clock className="w-4 h-4 mr-1" />
+              {new Date(appointment.date).toLocaleDateString('fr-FR')} à {appointment.time}
+            </div>
+            <div className="text-sm text-gray-500">
+              {appointment.patientPhone}
+            </div>
+            {appointment.notes && (
+              <p className="text-sm text-gray-600 mt-2">
+                Note: {appointment.notes}
+              </p>
+            )}
+          </div>
+        </div>
+        <div className="flex items-center space-x-2">
+          <span className={`px-3 py-1 rounded-full text-sm ${
+            appointment.status === 'confirmed' ? 'bg-green-100 text-green-800' :
+            appointment.status === 'completed' ? 'bg-blue-100 text-blue-800' :
+            appointment.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+            'bg-red-100 text-red-800'
+          }`}>
+            {appointment.status === 'confirmed' ? 'Confirmé' :
+             appointment.status === 'completed' ? 'Terminé' :
+             appointment.status === 'pending' ? 'En attente' : 'Annulé'}
+          </span>
+        </div>
+      </div>
+    </div>
+  );
 
   if (isLoading) {
     return (
@@ -129,12 +268,11 @@ export default function DoctorDashboard() {
           <div className="w-full md:w-64 space-y-4">
             <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
               <div className="text-center">
-                <img
-                  src={`https://ui-avatars.com/api/?name=${profile?.firstName}+${profile?.lastName}&background=0D8ABC&color=fff`}
-                  alt="Doctor profile"
-                  className="w-24 h-24 rounded-full mx-auto mb-4"
+                <ProfilePhotoUpload
+                  currentPhotoUrl={profile?.photoUrl}
+                  onPhotoUpdate={handlePhotoUpdate}
                 />
-                <h2 className="text-xl font-semibold">
+                <h2 className="text-xl font-semibold mt-4">
                   Dr. {profile?.firstName} {profile?.lastName}
                 </h2>
                 <p className="text-gray-600">{profile?.specialty}</p>
@@ -150,6 +288,20 @@ export default function DoctorDashboard() {
               >
                 <Calendar className="w-5 h-5" />
                 <span>Rendez-vous</span>
+              </button>
+              <button
+                onClick={() => setActiveTab('requests')}
+                className={`flex items-center space-x-3 w-full px-6 py-4 text-left ${
+                  activeTab === 'requests' ? 'bg-blue-50 text-blue-600' : 'text-gray-600 hover:bg-gray-50'
+                }`}
+              >
+                <FileText className="w-5 h-5" />
+                <span>Demandes</span>
+                {consultationRequests.length > 0 && (
+                  <span className="ml-2 bg-red-100 text-red-600 px-2 py-1 rounded-full text-xs">
+                    {consultationRequests.length}
+                  </span>
+                )}
               </button>
               <button
                 onClick={() => setActiveTab('patients')}
@@ -184,169 +336,8 @@ export default function DoctorDashboard() {
           {/* Main Content */}
           <div className="flex-1">
             <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
-              {activeTab === 'appointments' && (
-                <div className="space-y-6">
-                  <div className="flex justify-between items-center">
-                    <h3 className="text-xl font-semibold">Rendez-vous du jour</h3>
-                    <button 
-                      onClick={handleSchedule}
-                      className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
-                    >
-                      Gérer les disponibilités
-                    </button>
-                  </div>
-
-                  {todayAppointments.length === 0 ? (
-                    <p className="text-gray-500 text-center py-4">Aucun rendez-vous aujourd'hui</p>
-                  ) : (
-                    <div className="space-y-4">
-                      {todayAppointments.map((appointment) => (
-                        <div key={appointment.id} className="bg-white p-4 rounded-lg shadow-sm border border-gray-100">
-                          <div className="flex justify-between items-center">
-                            <div className="flex items-center space-x-4">
-                              <div className="bg-blue-100 p-3 rounded-full">
-                                {appointment.type === 'video' ? (
-                                  <Video className="w-6 h-6 text-blue-600" />
-                                ) : (
-                                  <User className="w-6 h-6 text-blue-600" />
-                                )}
-                              </div>
-                              <div>
-                                <h4 className="font-semibold">
-                                  {appointment.patientFirstName} {appointment.patientLastName}
-                                </h4>
-                                <div className="flex items-center text-sm text-gray-500">
-                                  <Clock className="w-4 h-4 mr-1" />
-                                  {appointment.time}
-                                </div>
-                                <div className="text-sm text-gray-500">
-                                  {appointment.patientPhone}
-                                </div>
-                              </div>
-                            </div>
-                            <div className="flex items-center space-x-2">
-                              {appointment.status === 'pending' && (
-                                <>
-                                  <button
-                                    onClick={() => handleAppointmentStatusUpdate(appointment.id, 'confirmed')}
-                                    className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm hover:bg-green-200"
-                                  >
-                                    Confirmer
-                                  </button>
-                                  <button
-                                    onClick={() => handleAppointmentStatusUpdate(appointment.id, 'cancelled')}
-                                    className="px-3 py-1 bg-red-100 text-red-800 rounded-full text-sm hover:bg-red-200"
-                                  >
-                                    Annuler
-                                  </button>
-                                </>
-                              )}
-                              {appointment.status === 'confirmed' && (
-                                <button
-                                  onClick={() => handleAppointmentStatusUpdate(appointment.id, 'completed')}
-                                  className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm hover:bg-blue-200"
-                                >
-                                  Terminer
-                                </button>
-                              )}
-                              <span className={`px-3 py-1 rounded-full text-sm ${
-                                appointment.status === 'confirmed' ? 'bg-green-100 text-green-800' :
-                                appointment.status === 'completed' ? 'bg-gray-100 text-gray-800' :
-                                'bg-red-100 text-red-800'
-                              }`}>
-                                {appointment.status === 'confirmed' ? 'Confirmé' :
-                                 appointment.status === 'completed' ? 'Terminé' : 'Annulé'}
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {activeTab === 'settings' && (
-                <div className="space-y-6">
-                  <h3 className="text-xl font-semibold">Paramètres du profil</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Spécialité
-                      </label>
-                      <input
-                        type="text"
-                        value={profile?.specialty || ''}
-                        onChange={(e) => setProfile(prev => prev ? {...prev, specialty: e.target.value} : null)}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Téléphone
-                      </label>
-                      <input
-                        type="tel"
-                        value={profile?.phone || ''}
-                        onChange={(e) => setProfile(prev => prev ? {...prev, phone: e.target.value} : null)}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Ville
-                      </label>
-                      <input
-                        type="text"
-                        value={profile?.city || ''}
-                        onChange={(e) => setProfile(prev => prev ? {...prev, city: e.target.value} : null)}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Tarif consultation (DZD)
-                      </label>
-                      <input
-                        type="number"
-                        value={profile?.consultationFee || ''}
-                        onChange={(e) => setProfile(prev => prev ? {...prev, consultationFee: Number(e.target.value)} : null)}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
-                      />
-                    </div>
-                    <div className="col-span-2">
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Adresse
-                      </label>
-                      <input
-                        type="text"
-                        value={profile?.address || ''}
-                        onChange={(e) => setProfile(prev => prev ? {...prev, address: e.target.value} : null)}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
-                      />
-                    </div>
-                    <div className="col-span-2">
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Bio
-                      </label>
-                      <textarea
-                        value={profile?.bio || ''}
-                        onChange={(e) => setProfile(prev => prev ? {...prev, bio: e.target.value} : null)}
-                        rows={4}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
-                      />
-                    </div>
-                  </div>
-                  <div className="flex justify-end">
-                    <button
-                      onClick={() => profile && handleProfileUpdate(profile)}
-                      className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
-                    >
-                      Enregistrer les modifications
-                    </button>
-                  </div>
-                </div>
-              )}
+              {activeTab === 'appointments' && renderAppointments()}
+              {/* Add other tab contents as needed */}
             </div>
           </div>
         </div>

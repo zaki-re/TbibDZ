@@ -31,9 +31,6 @@ export default function Footer() {
             <h4 className="text-lg font-semibold text-white mb-4">Liens Rapides</h4>
             <ul className="space-y-2">
               <li>
-                <a href="#" className="hover:text-white transition-colors">À Propos</a>
-              </li>
-              <li>
                 <a href="#" className="hover:text-white transition-colors">Trouver un Médecin</a>
               </li>
               <li>
@@ -41,6 +38,9 @@ export default function Footer() {
               </li>
               <li>
                 <a href="#" className="hover:text-white transition-colors">FAQ</a>
+              </li>
+              <li>
+                <a href="#" className="hover:text-white transition-colors">Contact</a>
               </li>
             </ul>
           </div>

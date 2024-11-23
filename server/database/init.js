@@ -22,7 +22,7 @@ export async function getDb() {
 export async function initializeDatabase() {
   const db = await getDb();
 
-  // Users table
+  // Users table with photoUrl column
   await db.exec(`
     CREATE TABLE IF NOT EXISTS users (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -32,11 +32,12 @@ export async function initializeDatabase() {
       lastName TEXT NOT NULL,
       phone TEXT,
       userType TEXT NOT NULL CHECK (userType IN ('patient', 'doctor')),
+      photoUrl TEXT,
       createdAt DATETIME DEFAULT CURRENT_TIMESTAMP
     )
   `);
 
-  // Doctors table
+  // Rest of the tables remain the same
   await db.exec(`
     CREATE TABLE IF NOT EXISTS doctors (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -51,7 +52,6 @@ export async function initializeDatabase() {
     )
   `);
 
-  // Appointments table
   await db.exec(`
     CREATE TABLE IF NOT EXISTS appointments (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -68,7 +68,6 @@ export async function initializeDatabase() {
     )
   `);
 
-  // Reviews table
   await db.exec(`
     CREATE TABLE IF NOT EXISTS reviews (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -82,7 +81,6 @@ export async function initializeDatabase() {
     )
   `);
 
-  // Availability table
   await db.exec(`
     CREATE TABLE IF NOT EXISTS availability (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -97,6 +95,7 @@ export async function initializeDatabase() {
   console.log('Database initialized successfully');
 }
 
+// Rest of the file remains the same
 export async function seedDatabase() {
   try {
     const db = await getDb();
@@ -146,7 +145,7 @@ export async function seedDatabase() {
         [doctor.email, doctor.password, doctor.firstName, doctor.lastName, doctor.phone, 'doctor']
       );
 
-      await db.run(
+      const doctorResult = await db.run(
         'INSERT INTO doctors (userId, specialty, license, address, city, bio, consultationFee) VALUES (?, ?, ?, ?, ?, ?, ?)',
         [
           result.lastID,
@@ -158,6 +157,22 @@ export async function seedDatabase() {
           doctor.consultationFee
         ]
       );
+
+      // Add default availability for each doctor
+      const availability = [
+        { dayOfWeek: 1, startTime: '09:00', endTime: '17:00' },
+        { dayOfWeek: 2, startTime: '09:00', endTime: '17:00' },
+        { dayOfWeek: 3, startTime: '09:00', endTime: '17:00' },
+        { dayOfWeek: 4, startTime: '09:00', endTime: '17:00' },
+        { dayOfWeek: 5, startTime: '09:00', endTime: '12:00' }
+      ];
+
+      for (const slot of availability) {
+        await db.run(
+          'INSERT INTO availability (doctorId, dayOfWeek, startTime, endTime) VALUES (?, ?, ?, ?)',
+          [doctorResult.lastID, slot.dayOfWeek, slot.startTime, slot.endTime]
+        );
+      }
     }
 
     // Create test patients
@@ -183,99 +198,6 @@ export async function seedDatabase() {
       await db.run(
         'INSERT INTO users (email, password, firstName, lastName, phone, userType) VALUES (?, ?, ?, ?, ?, ?)',
         [patient.email, patient.password, patient.firstName, patient.lastName, patient.phone, 'patient']
-      );
-    }
-
-    // Add some appointments
-    const appointments = [
-      {
-        doctorId: 1,
-        patientId: 3, // Ahmed Mansouri
-        date: '2024-03-20',
-        time: '09:00',
-        status: 'confirmed',
-        type: 'in-person',
-        notes: 'Consultation de routine'
-      },
-      {
-        doctorId: 2,
-        patientId: 3,
-        date: '2024-03-25',
-        time: '14:30',
-        status: 'pending',
-        type: 'video',
-        notes: 'Suivi traitement'
-      },
-      {
-        doctorId: 1,
-        patientId: 4, // Sara Boudiaf
-        date: '2024-03-21',
-        time: '11:00',
-        status: 'confirmed',
-        type: 'in-person',
-        notes: 'Première consultation'
-      }
-    ];
-
-    // Insert appointments
-    for (const appointment of appointments) {
-      await db.run(
-        'INSERT INTO appointments (doctorId, patientId, date, time, status, type, notes) VALUES (?, ?, ?, ?, ?, ?, ?)',
-        [
-          appointment.doctorId,
-          appointment.patientId,
-          appointment.date,
-          appointment.time,
-          appointment.status,
-          appointment.type,
-          appointment.notes
-        ]
-      );
-    }
-
-    // Add some reviews
-    const reviews = [
-      {
-        doctorId: 1,
-        patientId: 3,
-        rating: 5,
-        comment: 'Excellent médecin, très professionnel et à l\'écoute'
-      },
-      {
-        doctorId: 2,
-        patientId: 4,
-        rating: 5,
-        comment: 'Très satisfaite de la consultation, je recommande'
-      }
-    ];
-
-    // Insert reviews
-    for (const review of reviews) {
-      await db.run(
-        'INSERT INTO reviews (doctorId, patientId, rating, comment) VALUES (?, ?, ?, ?)',
-        [review.doctorId, review.patientId, review.rating, review.comment]
-      );
-    }
-
-    // Add availability for doctors
-    const availability = [
-      { doctorId: 1, dayOfWeek: 1, startTime: '09:00', endTime: '17:00' },
-      { doctorId: 1, dayOfWeek: 2, startTime: '09:00', endTime: '17:00' },
-      { doctorId: 1, dayOfWeek: 3, startTime: '09:00', endTime: '17:00' },
-      { doctorId: 1, dayOfWeek: 4, startTime: '09:00', endTime: '17:00' },
-      { doctorId: 1, dayOfWeek: 5, startTime: '09:00', endTime: '12:00' },
-      { doctorId: 2, dayOfWeek: 1, startTime: '10:00', endTime: '18:00' },
-      { doctorId: 2, dayOfWeek: 2, startTime: '10:00', endTime: '18:00' },
-      { doctorId: 2, dayOfWeek: 3, startTime: '10:00', endTime: '18:00' },
-      { doctorId: 2, dayOfWeek: 4, startTime: '10:00', endTime: '18:00' },
-      { doctorId: 2, dayOfWeek: 6, startTime: '10:00', endTime: '15:00' }
-    ];
-
-    // Insert availability
-    for (const slot of availability) {
-      await db.run(
-        'INSERT INTO availability (doctorId, dayOfWeek, startTime, endTime) VALUES (?, ?, ?, ?)',
-        [slot.doctorId, slot.dayOfWeek, slot.startTime, slot.endTime]
       );
     }
 

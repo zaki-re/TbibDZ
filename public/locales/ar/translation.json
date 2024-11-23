@@ -1,0 +1,60 @@
+{
+  "nav": {
+    "home": "الرئيسية",
+    "findDoctor": "ابحث عن طبيب",
+    "contact": "اتصل بنا",
+    "login": "تسجيل الدخول",
+    "register": "إنشاء حساب",
+    "dashboard": "لوحة التحكم",
+    "schedule": "الجدول الزمني",
+    "appointments": "المواعيد",
+    "logout": "تسجيل الخروج"
+  },
+  "hero": {
+    "title": "صحتك أولويتنا",
+    "subtitle": "اعثر على الطبيب المناسب واحجز موعدك فوراً",
+    "searchPlaceholder": "ابحث عن طبيب أو تخصص...",
+    "locationPlaceholder": "المدينة أو الولاية...",
+    "searchButton": "بحث",
+    "bookAppointment": "احجز موعد",
+    "createAccount": "إنشاء حساب"
+  },
+  "features": {
+    "title": "لماذا تختار طبيب دي زد؟",
+    "subtitle": "المنصة الطبية الأكثر شمولاً في الجزائر",
+    "easyBooking": {
+      "title": "حجز سهل",
+      "description": "احجز موعدك مع طبيبك على مدار الساعة بنقرات بسيطة"
+    },
+    "secureData": {
+      "title": "بيانات آمنة",
+      "description": "معلوماتك الطبية محمية ومشفرة"
+    },
+    "verifiedDoctors": {
+      "title": "أطباء معتمدون",
+      "description": "جميع أطبائنا معتمدون وموثقون"
+    },
+    "telehealth": {
+      "title": "استشارة عن بعد",
+      "description": "استشر طبيبك عن بعد بكل أمان"
+    }
+  },
+  "common": {
+    "loading": "جاري التحميل...",
+    "error": "حدث خطأ",
+    "save": "حفظ",
+    "cancel": "إلغاء",
+    "confirm": "تأكيد",
+    "delete": "حذف",
+    "edit": "تعديل",
+    "search": "بحث",
+    "filter": "تصفية",
+    "sort": "ترتيب",
+    "status": {
+      "pending": "قيد الانتظار",
+      "confirmed": "مؤكد",
+      "cancelled": "ملغي",
+      "completed": "مكتمل"
+    }
+  }
+}

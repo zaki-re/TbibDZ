@@ -8,7 +8,7 @@ import { useAuth } from '../../context/AuthContext';
 interface BookingModalProps {
   isOpen: boolean;
   onClose: () => void;
-  doctorId: string;
+  doctorId: number;
   doctorName: string;
   location: string;
 }
@@ -37,7 +37,7 @@ export default function BookingModal({
     try {
       setError('');
       const response = await api.post('/appointments', {
-        doctorId: parseInt(doctorId),
+        doctorId,
         date: date.toISOString().split('T')[0],
         time,
         type: 'in-person'
@@ -81,6 +81,7 @@ export default function BookingModal({
 
             {!isConfirmed ? (
               <BookingCalendar
+                doctorId={doctorId}
                 doctorName={doctorName}
                 onBookingConfirm={handleBookingConfirm}
               />

@@ -1,4 +1,5 @@
 import { Check, Calendar, Clock, User, MapPin } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 interface BookingConfirmationProps {
   appointment: {
@@ -10,6 +11,36 @@ interface BookingConfirmationProps {
 }
 
 export default function BookingConfirmation({ appointment }: BookingConfirmationProps) {
+  const handleAddToCalendar = () => {
+    const startDate = new Date(appointment.date);
+    const [hours, minutes] = appointment.time.split(':');
+    startDate.setHours(parseInt(hours), parseInt(minutes));
+    
+    const endDate = new Date(startDate);
+    endDate.setHours(startDate.getHours() + 1);
+
+    const event = {
+      title: `Rendez-vous avec ${appointment.doctorName}`,
+      description: `Consultation médicale avec ${appointment.doctorName}`,
+      location: appointment.location,
+      startTime: startDate.toISOString(),
+      endTime: endDate.toISOString()
+    };
+
+    // Create Google Calendar URL
+    const googleUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(event.title)}&dates=${startDate.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/g, '')}/${endDate.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/g, '')}&details=${encodeURIComponent(event.description)}&location=${encodeURIComponent(event.location)}`;
+    
+    window.open(googleUrl, '_blank');
+  };
+
+  const handleReturnHome = () => {
+    window.dispatchEvent(new CustomEvent('navigate', { detail: 'home' }));
+  };
+
+  const handleContactUs = () => {
+    window.dispatchEvent(new CustomEvent('navigate', { detail: 'contact' }));
+  };
+
   return (
     <div className="max-w-md mx-auto bg-white rounded-lg shadow-lg p-6">
       <div className="text-center mb-6">
@@ -64,16 +95,32 @@ export default function BookingConfirmation({ appointment }: BookingConfirmation
       </div>
 
       <div className="mt-8 space-y-4">
-        <button className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition-colors">
+        <button 
+          onClick={handleAddToCalendar}
+          className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center"
+        >
+          <Calendar className="w-5 h-5 mr-2" />
           Ajouter au calendrier
         </button>
-        <button className="w-full bg-gray-100 text-gray-700 py-3 rounded-lg hover:bg-gray-200 transition-colors">
+        
+        <button 
+          onClick={handleReturnHome}
+          className="w-full bg-gray-100 text-gray-700 py-3 rounded-lg hover:bg-gray-200 transition-colors"
+        >
           Retour à l'accueil
         </button>
       </div>
 
       <div className="mt-6 text-center text-sm text-gray-500">
-        <p>Besoin d'aide? <a href="#" className="text-blue-600 hover:text-blue-700">Contactez-nous</a></p>
+        <p>
+          Besoin d'aide?{' '}
+          <button 
+            onClick={handleContactUs}
+            className="text-blue-600 hover:text-blue-700"
+          >
+            Contactez-nous
+          </button>
+        </p>
       </div>
     </div>
   );

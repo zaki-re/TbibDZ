@@ -12,6 +12,16 @@ export interface Doctor {
   city?: string;
   bio?: string;
   consultationFee?: number;
+  rating?: number;
+  reviewsCount?: number;
+}
+
+export interface SearchParams {
+  search?: string;
+  city?: string;
+  specialty?: string;
+  rating?: number;
+  availability?: string;
 }
 
 export interface Availability {
@@ -32,12 +42,20 @@ export interface AvailabilityResponse {
   bookedSlots: BookedSlot[];
 }
 
-export const getDoctorAvailability = async (id: number): Promise<AvailabilityResponse> => {
-  const response = await api.get(`/doctors/${id}/availability`);
+export const searchDoctors = async (params: SearchParams) => {
+  const queryParams = new URLSearchParams();
+  
+  if (params.search) queryParams.append('search', params.search);
+  if (params.city) queryParams.append('city', params.city);
+  if (params.specialty) queryParams.append('specialty', params.specialty);
+  if (params.rating) queryParams.append('rating', params.rating.toString());
+  if (params.availability) queryParams.append('availability', params.availability);
+
+  const response = await api.get(`/doctors?${queryParams.toString()}`);
   return response.data;
 };
 
-export const updateDoctorAvailability = async (availability: Availability[]) => {
-  const response = await api.put('/doctors/availability', { availability });
+export const getDoctorAvailability = async (doctorId: number): Promise<AvailabilityResponse> => {
+  const response = await api.get(`/doctors/availability/${doctorId}`);
   return response.data;
 };

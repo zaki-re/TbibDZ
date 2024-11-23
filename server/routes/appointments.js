@@ -43,6 +43,39 @@ router.post('/', auth, async (req, res) => {
   }
 });
 
+// Delete appointment
+router.delete('/:id', auth, async (req, res) => {
+  try {
+    const db = await getDb();
+    const appointmentId = req.params.id;
+
+    // Get the appointment
+    const appointment = await db.get(`
+      SELECT a.*, d.userId as doctorUserId
+      FROM appointments a
+      JOIN doctors d ON a.doctorId = d.id
+      WHERE a.id = ?
+    `, [appointmentId]);
+
+    if (!appointment) {
+      return res.status(404).json({ message: 'Appointment not found' });
+    }
+
+    // Check if user has permission (either the doctor or the patient)
+    if (appointment.patientId !== req.user.id && appointment.doctorUserId !== req.user.id) {
+      return res.status(403).json({ message: 'Not authorized to delete this appointment' });
+    }
+
+    // Delete the appointment
+    await db.run('DELETE FROM appointments WHERE id = ?', [appointmentId]);
+
+    res.json({ message: 'Appointment deleted successfully' });
+  } catch (error) {
+    console.error('Delete appointment error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 // Get appointments for user (doctor or patient)
 router.get('/', auth, async (req, res) => {
   try {
@@ -139,4 +172,4 @@ router.put('/:id', auth, async (req, res) => {
   }
 });
 
-export { router as default };
+export { router };

@@ -1,0 +1,60 @@
+{
+  "nav": {
+    "home": "Home",
+    "findDoctor": "Find a Doctor",
+    "contact": "Contact",
+    "login": "Login",
+    "register": "Register",
+    "dashboard": "Dashboard",
+    "schedule": "Schedule",
+    "appointments": "Appointments",
+    "logout": "Logout"
+  },
+  "hero": {
+    "title": "Your Health, Our Priority",
+    "subtitle": "Find the right doctor and book appointments instantly",
+    "searchPlaceholder": "Search for a doctor or specialty...",
+    "locationPlaceholder": "City or wilaya...",
+    "searchButton": "Search",
+    "bookAppointment": "Book Appointment",
+    "createAccount": "Create Account"
+  },
+  "features": {
+    "title": "Why Choose TabibDZ?",
+    "subtitle": "The most comprehensive medical platform in Algeria",
+    "easyBooking": {
+      "title": "Easy Booking",
+      "description": "Book appointments online 24/7 with your doctor in a few clicks"
+    },
+    "secureData": {
+      "title": "Secure Data",
+      "description": "Your medical information is protected and encrypted"
+    },
+    "verifiedDoctors": {
+      "title": "Verified Doctors",
+      "description": "All our doctors are certified and verified"
+    },
+    "telehealth": {
+      "title": "Telehealth",
+      "description": "Consult your doctor remotely with complete security"
+    }
+  },
+  "common": {
+    "loading": "Loading...",
+    "error": "An error occurred",
+    "save": "Save",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "delete": "Delete",
+    "edit": "Edit",
+    "search": "Search",
+    "filter": "Filter",
+    "sort": "Sort",
+    "status": {
+      "pending": "Pending",
+      "confirmed": "Confirmed",
+      "cancelled": "Cancelled",
+      "completed": "Completed"
+    }
+  }
+}

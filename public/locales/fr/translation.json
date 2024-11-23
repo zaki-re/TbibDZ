@@ -1,0 +1,60 @@
+{
+  "nav": {
+    "home": "Accueil",
+    "findDoctor": "Trouver un Médecin",
+    "contact": "Contact",
+    "login": "Connexion",
+    "register": "S'inscrire",
+    "dashboard": "Tableau de bord",
+    "schedule": "Planning",
+    "appointments": "Rendez-vous",
+    "logout": "Déconnexion"
+  },
+  "hero": {
+    "title": "Votre Santé, Notre Priorité",
+    "subtitle": "Trouvez le bon médecin et prenez rendez-vous instantanément",
+    "searchPlaceholder": "Rechercher un médecin ou une spécialité...",
+    "locationPlaceholder": "Ville ou wilaya...",
+    "searchButton": "Rechercher",
+    "bookAppointment": "Prendre Rendez-vous",
+    "createAccount": "Créer un compte"
+  },
+  "features": {
+    "title": "Pourquoi Choisir TabibDZ?",
+    "subtitle": "La plateforme médicale la plus complète en Algérie",
+    "easyBooking": {
+      "title": "Rendez-vous Facile",
+      "description": "Prenez rendez-vous en ligne 24/7 avec votre médecin en quelques clics"
+    },
+    "secureData": {
+      "title": "Données Sécurisées",
+      "description": "Vos informations médicales sont protégées et cryptées"
+    },
+    "verifiedDoctors": {
+      "title": "Médecins Vérifiés",
+      "description": "Tous nos médecins sont certifiés et vérifiés"
+    },
+    "telehealth": {
+      "title": "Téléconsultation",
+      "description": "Consultez votre médecin à distance en toute sécurité"
+    }
+  },
+  "common": {
+    "loading": "Chargement...",
+    "error": "Une erreur est survenue",
+    "save": "Enregistrer",
+    "cancel": "Annuler",
+    "confirm": "Confirmer",
+    "delete": "Supprimer",
+    "edit": "Modifier",
+    "search": "Rechercher",
+    "filter": "Filtrer",
+    "sort": "Trier",
+    "status": {
+      "pending": "En attente",
+      "confirmed": "Confirmé",
+      "cancelled": "Annulé",
+      "completed": "Terminé"
+    }
+  }
+}

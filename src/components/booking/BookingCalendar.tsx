@@ -25,50 +25,60 @@ export default function BookingCalendar({ doctorId, doctorName, onBookingConfirm
       setIsLoading(true);
       setError('');
       const response = await getDoctorAvailability(parseInt(doctorId));
+      console.log('Availability response:', response); // Debug log
       setAvailability(response.availability);
       setBookedSlots(response.bookedSlots);
     } catch (err) {
-      setError('Erreur lors du chargement des disponibilités');
       console.error('Error loading availability:', err);
+      setError('Erreur lors du chargement des disponibilités');
     } finally {
       setIsLoading(false);
     }
   };
 
   const generateTimeSlots = (date: Date) => {
+    const now = new Date();
     const dayOfWeek = date.getDay();
     const dateStr = date.toISOString().split('T')[0];
     
     // Get available slots for the selected day
-    const dayAvailability = availability.filter(slot => slot.dayOfWeek === dayOfWeek);
+    const dayAvailability = availability.find(slot => slot.dayOfWeek === dayOfWeek);
     
     // Generate 30-minute slots within available periods
     const slots: { time: string; available: boolean }[] = [];
+
+    if (!dayAvailability) {
+      return [];
+    }
+
+    const [startHour, startMinute] = dayAvailability.startTime.split(':').map(Number);
+    const [endHour, endMinute] = dayAvailability.endTime.split(':').map(Number);
     
-    dayAvailability.forEach(period => {
-      const [startHour, startMinute] = period.startTime.split(':').map(Number);
-      const [endHour, endMinute] = period.endTime.split(':').map(Number);
-      
-      let currentTime = new Date();
-      currentTime.setHours(startHour, startMinute, 0);
-      
-      const endTime = new Date();
-      endTime.setHours(endHour, endMinute, 0);
-      
-      while (currentTime < endTime) {
-        const timeStr = currentTime.toTimeString().slice(0, 5);
-        const isBooked = bookedSlots.some(
-          slot => slot.date === dateStr && slot.time === timeStr
-        );
-        
-        slots.push({
-          time: timeStr,
-          available: !isBooked
-        });
-        
-        currentTime.setMinutes(currentTime.getMinutes() + 30);
-      }
-    });
+    let currentTime = new Date(date);
+    currentTime.setHours(startHour, startMinute, 0);
+    
+    const endTime = new Date(date);
+    endTime.setHours(endHour, endMinute, 0);
+    
+    while (currentTime < endTime) {
+      const timeStr = currentTime.toTimeString().slice(0, 5);
+      const isBooked = bookedSlots.some(
+        slot => slot.date === dateStr && slot.time === timeStr
+      );
+
+      // Check if the slot is in the past
+      const slotDateTime = new Date(date);
+      const [slotHour, slotMinute] = timeStr.split(':').map(Number);
+      slotDateTime.setHours(slotHour, slotMinute, 0);
+      const isPast = date.toDateString() === now.toDateString() && slotDateTime < now;
+
+      slots.push({
+        time: timeStr,
+        available: !isBooked && !isPast
+      });
+
+      currentTime.setMinutes(currentTime.getMinutes() + 30);
+    }
     
     return slots;
   };
@@ -92,10 +102,15 @@ export default function BookingCalendar({ doctorId, doctorName, onBookingConfirm
     const dates = [];
     const today = new Date();
     
-    for (let i = 0; i < 7; i++) {
+    for (let i = 0; i < 14; i++) { // Show next 14 days
       const date = new Date(today);
       date.setDate(today.getDate() + i);
-      dates.push(date);
+      
+      // Only include days that have availability
+      const dayOfWeek = date.getDay();
+      if (availability.some(slot => slot.dayOfWeek === dayOfWeek)) {
+        dates.push(date);
+      }
     }
 
     return dates;
@@ -121,27 +136,32 @@ export default function BookingCalendar({ doctorId, doctorName, onBookingConfirm
     return <div className="text-center py-8 text-red-600">{error}</div>;
   }
 
+  const availableDates = generateDateButtons();
   const timeSlots = selectedDate ? generateTimeSlots(selectedDate) : [];
 
   return (
     <div className="bg-white rounded-lg p-6">
       <div className="mb-8">
         <h3 className="text-xl font-semibold mb-4">Sélectionnez une date</h3>
-        <div className="grid grid-cols-2 md:grid-cols-7 gap-2">
-          {generateDateButtons().map((date, index) => (
-            <button
-              key={index}
-              onClick={() => handleDateSelect(date)}
-              className={`p-3 rounded-lg text-center transition-colors ${
-                isDateSelected(date)
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-50 hover:bg-gray-100'
-              }`}
-            >
-              <span className="block text-sm">{formatDate(date)}</span>
-            </button>
-          ))}
-        </div>
+        {availableDates.length === 0 ? (
+          <p className="text-center text-gray-500">Aucune disponibilité dans les prochains jours</p>
+        ) : (
+          <div className="grid grid-cols-2 md:grid-cols-7 gap-2">
+            {availableDates.map((date, index) => (
+              <button
+                key={index}
+                onClick={() => handleDateSelect(date)}
+                className={`p-3 rounded-lg text-center transition-colors ${
+                  isDateSelected(date)
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-gray-50 hover:bg-gray-100'
+                }`}
+              >
+                <span className="block text-sm">{formatDate(date)}</span>
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       {selectedDate && (

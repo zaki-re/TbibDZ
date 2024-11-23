@@ -3,10 +3,11 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
-import authRoutes from './routes/auth.js';
-import doctorRoutes from './routes/doctors.js';
-import patientRoutes from './routes/patients.js';
-import appointmentRoutes from './routes/appointments.js';
+import { router as authRoutes } from './routes/auth.js';
+import { router as doctorRoutes } from './routes/doctors.js';
+import { router as patientRoutes } from './routes/patients.js';
+import { router as appointmentRoutes } from './routes/appointments.js';
+import { router as userRoutes } from './routes/users.js';
 import { initializeDatabase, seedDatabase } from './database/init.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -24,6 +25,9 @@ app.use(cors({
 }));
 app.use(express.json());
 
+// Serve uploaded files
+app.use('/uploads', express.static(join(__dirname, 'uploads')));
+
 // Initialize and seed database
 await initializeDatabase();
 await seedDatabase();
@@ -33,6 +37,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/doctors', doctorRoutes);
 app.use('/api/patients', patientRoutes);
 app.use('/api/appointments', appointmentRoutes);
+app.use('/api/users', userRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {

@@ -100,4 +100,4 @@ router.post('/register', async (req, res) => {
   }
 });
 
-export { router as default };
+export { router };
