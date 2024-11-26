@@ -3,6 +3,10 @@ import { Calendar, Clock, User, Settings, Star, Video, FileText, ChevronRight, M
 import api from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import ProfilePhotoUpload from '../ProfilePhotoUpload';
+import { useLanguage } from '../../hooks/useLanguage';
+import PatientsList from './DoctorDashboard/PatientsList';
+import ReviewsList from './DoctorDashboard/ReviewsList';
+import SettingsForm from './DoctorDashboard/SettingsForm';
 
 type TabType = 'appointments' | 'requests' | 'patients' | 'reviews' | 'settings';
 
@@ -55,6 +59,7 @@ export default function DoctorDashboard() {
   const [searchTerm, setSearchTerm] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
+  const { t } = useLanguage();
 
   useEffect(() => {
     if (userId) {
@@ -133,12 +138,12 @@ export default function DoctorDashboard() {
   const renderAppointments = () => (
     <div className="space-y-6">
       <div className="flex justify-between items-center mb-6">
-        <h3 className="text-xl font-semibold">Rendez-vous</h3>
+        <h3 className="text-xl font-semibold">{t('doctor.appointments.title')}</h3>
         <button 
           onClick={handleSchedule}
           className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
         >
-          Gérer les disponibilités
+          {t('doctor.appointments.manageAvailability')}
         </button>
       </div>
 
@@ -147,7 +152,7 @@ export default function DoctorDashboard() {
           <Search className="absolute left-3 top-3 text-gray-400 w-5 h-5" />
           <input
             type="text"
-            placeholder="Rechercher un patient..."
+            placeholder={t('doctor.appointments.searchPatient')}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
@@ -157,9 +162,9 @@ export default function DoctorDashboard() {
 
       {/* Today's Appointments */}
       <div className="mb-8">
-        <h4 className="text-lg font-medium mb-4">Aujourd'hui</h4>
+        <h4 className="text-lg font-medium mb-4">{t('doctor.appointments.today')}</h4>
         {todayAppointments.length === 0 ? (
-          <p className="text-gray-500 text-center py-4">Aucun rendez-vous aujourd'hui</p>
+          <p className="text-gray-500 text-center py-4">{t('doctor.appointments.noAppointmentsToday')}</p>
         ) : (
           <div className="space-y-4">
             {todayAppointments.map((appointment) => (
@@ -171,9 +176,9 @@ export default function DoctorDashboard() {
 
       {/* Future Appointments */}
       <div className="mb-8">
-        <h4 className="text-lg font-medium mb-4">Rendez-vous à venir</h4>
+        <h4 className="text-lg font-medium mb-4">{t('doctor.appointments.upcoming')}</h4>
         {futureAppointments.length === 0 ? (
-          <p className="text-gray-500 text-center py-4">Aucun rendez-vous à venir</p>
+          <p className="text-gray-500 text-center py-4">{t('doctor.appointments.noUpcomingAppointments')}</p>
         ) : (
           <div className="space-y-4">
             {futureAppointments.map((appointment) => (
@@ -185,9 +190,9 @@ export default function DoctorDashboard() {
 
       {/* Past Appointments */}
       <div>
-        <h4 className="text-lg font-medium mb-4">Historique des rendez-vous</h4>
+        <h4 className="text-lg font-medium mb-4">{t('doctor.appointments.past')}</h4>
         {pastAppointments.length === 0 ? (
-          <p className="text-gray-500 text-center py-4">Aucun rendez-vous passé</p>
+          <p className="text-gray-500 text-center py-4">{t('doctor.appointments.noPastAppointments')}</p>
         ) : (
           <div className="space-y-4">
             {pastAppointments.map((appointment) => (
@@ -235,9 +240,7 @@ export default function DoctorDashboard() {
             appointment.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
             'bg-red-100 text-red-800'
           }`}>
-            {appointment.status === 'confirmed' ? 'Confirmé' :
-             appointment.status === 'completed' ? 'Terminé' :
-             appointment.status === 'pending' ? 'En attente' : 'Annulé'}
+            {t(`doctor.appointments.status.${appointment.status}`)}
           </span>
         </div>
       </div>
@@ -248,7 +251,7 @@ export default function DoctorDashboard() {
     return (
       <div className="min-h-screen bg-gray-50 pt-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="text-center">Chargement...</div>
+          <div className="text-center">{t('common.loading')}</div>
         </div>
       </div>
     );
@@ -287,7 +290,7 @@ export default function DoctorDashboard() {
                 }`}
               >
                 <Calendar className="w-5 h-5" />
-                <span>Rendez-vous</span>
+                <span>{t('doctor.nav.appointments')}</span>
               </button>
               <button
                 onClick={() => setActiveTab('requests')}
@@ -296,7 +299,7 @@ export default function DoctorDashboard() {
                 }`}
               >
                 <FileText className="w-5 h-5" />
-                <span>Demandes</span>
+                <span>{t('doctor.nav.requests')}</span>
                 {consultationRequests.length > 0 && (
                   <span className="ml-2 bg-red-100 text-red-600 px-2 py-1 rounded-full text-xs">
                     {consultationRequests.length}
@@ -310,7 +313,7 @@ export default function DoctorDashboard() {
                 }`}
               >
                 <User className="w-5 h-5" />
-                <span>Patients</span>
+                <span>{t('doctor.nav.patients')}</span>
               </button>
               <button
                 onClick={() => setActiveTab('reviews')}
@@ -319,7 +322,7 @@ export default function DoctorDashboard() {
                 }`}
               >
                 <Star className="w-5 h-5" />
-                <span>Avis</span>
+                <span>{t('doctor.nav.reviews')}</span>
               </button>
               <button
                 onClick={() => setActiveTab('settings')}
@@ -328,7 +331,7 @@ export default function DoctorDashboard() {
                 }`}
               >
                 <Settings className="w-5 h-5" />
-                <span>Paramètres</span>
+                <span>{t('doctor.nav.settings')}</span>
               </button>
             </nav>
           </div>
@@ -337,7 +340,9 @@ export default function DoctorDashboard() {
           <div className="flex-1">
             <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
               {activeTab === 'appointments' && renderAppointments()}
-              {/* Add other tab contents as needed */}
+              {activeTab === 'patients' && <PatientsList />}
+              {activeTab === 'reviews' && <ReviewsList />}
+              {activeTab === 'settings' && <SettingsForm />}
             </div>
           </div>
         </div>
